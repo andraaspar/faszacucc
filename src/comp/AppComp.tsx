@@ -7,7 +7,7 @@ import { useRedraw } from '../hook/useRedraw'
 import { useWindowResizeListener } from '../hook/useWindowResizeListener'
 import { IRedrawData } from '../model/IRedrawData'
 import { IUpdate } from '../model/IUpdate'
-import { ContextApp, IAppState } from './ContextApp'
+import { ContextAppState, IAppState } from './ContextAppState'
 
 export interface AppCompProps {}
 
@@ -53,7 +53,7 @@ export function AppComp(props: AppCompProps) {
 	}
 	const redraw = useRedraw({ appState, updateAppState, data })
 	return (
-		<ContextApp.Provider value={{ appState, setAppState, updateAppState }}>
+		<ContextAppState.Provider value={{ appState, setAppState, updateAppState }}>
 			<div class='overscript'>
 				X: {formatNumber(3, 5, appState.offset.x)} Y:{' '}
 				{formatNumber(3, 5, appState.offset.y)} Scale: {appState.scaleBase}{' '}
@@ -85,6 +85,6 @@ export function AppComp(props: AppCompProps) {
 					e.preventDefault()
 				}}
 			/>
-		</ContextApp.Provider>
+		</ContextAppState.Provider>
 	)
 }

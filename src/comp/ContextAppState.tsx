@@ -10,16 +10,16 @@ export interface IAppState {
 	scaleBase: number
 }
 
-export interface IContextApp {
+export interface IContextAppState {
 	appState: IAppState
 	setAppState: Setter<IAppState>
 	updateAppState: IUpdater<IAppState>
 }
 
-export const ContextApp = createContext<IContextApp>()
+export const ContextAppState = createContext<IContextAppState>()
 
-export function useContextApp() {
-	const it = useContext(ContextApp)
-	if (!it) throw new Error(`[sn730f] ContextApp not defined.`)
+export function useContextAppState() {
+	const it = useContext(ContextAppState)
+	if (!it) throw new Error(`[sn730f] ContextAppState not defined.`)
 	return it
 }

@@ -1,4 +1,4 @@
-import { IAppState } from '../comp/ContextApp'
+import { IAppState } from '../comp/ContextAppState'
 import { ITransition } from './ITransition'
 
 export interface IRedrawData {

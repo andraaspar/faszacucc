@@ -1,5 +1,5 @@
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js'
-import { IAppState } from '../comp/ContextApp'
+import { IAppState } from '../comp/ContextAppState'
 import { doTransitionStep } from '../fun/doTransitionStep'
 import { drawCrosshair } from '../fun/drawCrosshair'
 import { drawHexPattern } from '../fun/drawHexPattern'
