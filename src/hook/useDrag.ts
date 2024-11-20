@@ -1,5 +1,5 @@
 import { createEffect, createSignal, on } from 'solid-js'
-import { FIELD_SIZE } from '../model/FIELD_SIZE'
+import { FIELD_SIZE_X, FIELD_SIZE_Y } from '../model/FIELD_SIZE'
 import { IPoint } from '../model/IPoint'
 
 export interface IDragStart {
@@ -12,14 +12,14 @@ export function useDrag({
 	getPosition,
 	setPosition,
 	getScale,
+	lastPointerCss,
 }: {
 	getPosition: () => IPoint
 	setPosition: (point: IPoint) => void
 	getScale: () => number
+	lastPointerCss: IPoint
 }) {
 	const [getDragStart, setDragStart] = createSignal<IDragStart | undefined>()
-	let lastPageX = 0
-	let lastPageY = 0
 	function getIsDragged() {
 		return !!getDragStart()
 	}
@@ -28,7 +28,7 @@ export function useDrag({
 			if (dragStart && dragStart.scale !== scale) {
 				const position = getPosition()
 				setDragStart({
-					page: { x: lastPageX, y: lastPageY },
+					page: { x: lastPointerCss.x, y: lastPointerCss.y },
 					position: { x: position.x, y: position.y },
 					scale: scale,
 				})
@@ -36,6 +36,7 @@ export function useDrag({
 		}),
 	)
 	function onPointerDown(e: PointerEvent) {
+		e.preventDefault() // Avoid scroll cursor
 		if (e.pointerType !== 'mouse' || e.button === 1) {
 			const position = getPosition()
 			setDragStart({
@@ -51,14 +52,14 @@ export function useDrag({
 			setPosition({
 				x:
 					dragStart.position.x +
-					(e.pageX - dragStart.page.x) / FIELD_SIZE / dragStart.scale,
+					(e.pageX - dragStart.page.x) / FIELD_SIZE_X / dragStart.scale,
 				y:
 					dragStart.position.y +
-					(e.pageY - dragStart.page.y) / FIELD_SIZE / dragStart.scale,
+					(e.pageY - dragStart.page.y) / FIELD_SIZE_Y / dragStart.scale,
 			})
 		}
 	}
-	function onPointerCancel(e: PointerEvent) {
+	function onPointerUp(e: PointerEvent) {
 		if (getIsDragged()) {
 			setDragStart(undefined)
 		}
@@ -67,7 +68,8 @@ export function useDrag({
 		getIsDragged,
 		onPointerDown,
 		onPointerMove,
-		onPointerCancel,
-		onPointerUp: onPointerCancel,
+		onPointerUp,
+		onPointerCancel: onPointerUp,
+		onPointerLeave: onPointerUp,
 	}
 }

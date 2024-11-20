@@ -3,8 +3,10 @@ import { IPoint } from '../model/IPoint'
 import { IUpdater } from '../model/IUpdater'
 
 export interface IAppState {
+	pointerDevice: IPoint
+	pointerCss: IPoint
 	offset: IPoint
-	sizeDevice: IPoint
+	sizeCss: IPoint
 	scaleBase: number
 }
 

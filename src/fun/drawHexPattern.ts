@@ -1,9 +1,10 @@
-import { FIELD_SIZE } from '../model/FIELD_SIZE'
+import { FIELD_SIZE_X, FIELD_SIZE_Y } from '../model/FIELD_SIZE'
 import { IRedrawData } from '../model/IRedrawData'
 
 const hexCanvas = document.createElement('canvas')
 const context = hexCanvas.getContext('2d')!
 const n = 7
+const fieldCenterOffset = 1 / 3
 
 export function drawHexPattern({
 	appState,
@@ -25,11 +26,11 @@ export function drawHexPattern({
 		Math.min(window.innerHeight, Math.ceil(targetHeight)),
 	)
 	context.clearRect(0, 0, hexCanvas.width, hexCanvas.height)
-	const maxScale = Math.min(
-		window.innerHeight / baseHeight,
-		window.innerWidth / baseWidth,
+	const maxScale = Math.max(
+		4,
+		Math.min(window.innerHeight / baseHeight, window.innerWidth / baseWidth),
 	)
-	const fadeBeforeMaxScale = (maxScale - 1) * 0.75
+	const fadeBeforeMaxScale = maxScale * 0.5
 	const scaleDiff = maxScale - fadeBeforeMaxScale
 	if (
 		hexCanvas.height > 8 &&
@@ -60,10 +61,9 @@ export function drawHexPattern({
 	pattern.setTransform(
 		new DOMMatrix()
 			.translate(
-				appState.sizeDevice.x / 2 + appState.offset.x * FIELD_SIZE * scaleCss,
-				appState.sizeDevice.y / 2 +
-					appState.offset.y * FIELD_SIZE * scaleCss +
-					37.5 * scaleCss,
+				appState.sizeCss.x / 2 + appState.offset.x * FIELD_SIZE_X * scaleCss,
+				appState.sizeCss.y / 2 +
+					(appState.offset.y + fieldCenterOffset) * FIELD_SIZE_Y * scaleCss,
 			)
 			.scale(targetWidth / hexCanvas.width, targetHeight / hexCanvas.height),
 	)
