@@ -1,10 +1,11 @@
 import { createEffect, createSignal, on } from 'solid-js'
 import { FIELD_SIZE_X, FIELD_SIZE_Y } from '../model/FIELD_SIZE'
 import { IPoint } from '../model/IPoint'
+import { IPointUV } from '../model/IPointUV'
 
 export interface IDragStart {
 	page: IPoint
-	position: IPoint
+	position: IPointUV
 	scale: number
 }
 
@@ -14,8 +15,8 @@ export function useDrag({
 	getScale,
 	lastPointerCss,
 }: {
-	getPosition: () => IPoint
-	setPosition: (point: IPoint) => void
+	getPosition: () => IPointUV
+	setPosition: (point: IPointUV) => void
 	getScale: () => number
 	lastPointerCss: IPoint
 }) {
@@ -29,32 +30,30 @@ export function useDrag({
 				const position = getPosition()
 				setDragStart({
 					page: { x: lastPointerCss.x, y: lastPointerCss.y },
-					position: { x: position.x, y: position.y },
+					position: { u: position.u, v: position.v },
 					scale: scale,
-				})
+				} satisfies IDragStart)
 			}
 		}),
 	)
 	function onPointerDown(e: PointerEvent) {
 		e.preventDefault() // Avoid scroll cursor
-		if (e.pointerType !== 'mouse' || e.button === 1) {
-			const position = getPosition()
-			setDragStart({
-				page: { x: e.pageX, y: e.pageY },
-				position: { x: position.x, y: position.y },
-				scale: getScale(),
-			})
-		}
+		const position = getPosition()
+		setDragStart({
+			page: { x: e.pageX, y: e.pageY },
+			position: { u: position.u, v: position.v },
+			scale: getScale(),
+		} satisfies IDragStart)
 	}
 	function onPointerMove(e: PointerEvent) {
 		const dragStart = getDragStart()
 		if (dragStart) {
 			setPosition({
-				x:
-					dragStart.position.x +
+				u:
+					dragStart.position.u +
 					(e.pageX - dragStart.page.x) / FIELD_SIZE_X / dragStart.scale,
-				y:
-					dragStart.position.y +
+				v:
+					dragStart.position.v +
 					(e.pageY - dragStart.page.y) / FIELD_SIZE_Y / dragStart.scale,
 			})
 		}

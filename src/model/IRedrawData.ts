@@ -1,4 +1,5 @@
 import { IAppState } from '../comp/ContextAppState'
+import { IRectangleUV } from './IRectangleUV'
 import { ITransition } from './ITransition'
 
 export interface IRedrawData {
@@ -8,4 +9,5 @@ export interface IRedrawData {
 	scaleBase: ITransition
 	scaleDevice: number
 	scaleCss: number
+	visibleFields: IRectangleUV
 }

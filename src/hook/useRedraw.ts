@@ -3,6 +3,7 @@ import { IAppState } from '../comp/ContextAppState'
 import { doTransitionStep } from '../fun/doTransitionStep'
 import { drawCrosshair } from '../fun/drawCrosshair'
 import { drawHexPattern } from '../fun/drawHexPattern'
+import { drawMarker } from '../fun/drawMarker'
 import { getScaleCss } from '../fun/getScaleCss'
 import { getScaleDevice } from '../fun/getScaleDevice'
 import { powTransition } from '../fun/powTransition'
@@ -33,9 +34,9 @@ export function useRedraw({
 		const c = getContext()
 		const canvas = getCanvasRef()
 		if (c && canvas) {
-			// Resize canvas to match the window.
-			canvas.width = appState.sizeCss.x
-			canvas.height = appState.sizeCss.y
+			// Resize canvas to match the device resolution.
+			canvas.width = appState.sizeDevice.x
+			canvas.height = appState.sizeDevice.y
 
 			// Share these with all the functions.
 			data.c = c
@@ -52,21 +53,41 @@ export function useRedraw({
 			if (prevScale < scale) {
 				const multi = scale / prevScale
 				const mouseDistanceX =
-					((appState.pointerCss.x - appState.sizeCss.x / 2) /
-						(FIELD_SIZE_X * prevScale)) *
-					devicePixelRatio
+					(appState.pointerCss.x - appState.sizeCss.x / 2) /
+					(FIELD_SIZE_X * prevScale)
 				const mouseDistanceY =
-					((appState.pointerCss.y - appState.sizeCss.y / 2) /
-						(FIELD_SIZE_Y * prevScale)) *
-					devicePixelRatio
+					(appState.pointerCss.y - appState.sizeCss.y / 2) /
+					(FIELD_SIZE_Y * prevScale)
 				updateAppState((it) => {
-					it.offset.x -= (mouseDistanceX * multi - mouseDistanceX) / multi
-					it.offset.y -= (mouseDistanceY * multi - mouseDistanceY) / multi
+					it.offsetFields.u -= (mouseDistanceX * multi - mouseDistanceX) / multi
+					it.offsetFields.v -= (mouseDistanceY * multi - mouseDistanceY) / multi
 				})
 			}
 
+			const widthFields =
+				appState.sizeDevice.x / (FIELD_SIZE_X * data.scaleDevice)
+			const heightFields =
+				appState.sizeDevice.y / (FIELD_SIZE_Y * data.scaleDevice)
+			data.visibleFields.u0 = Math.floor(
+				-appState.offsetFields.u - widthFields / 2,
+			)
+			data.visibleFields.u1 =
+				Math.ceil(-appState.offsetFields.u + widthFields / 2) + 1
+			data.visibleFields.v0 = Math.floor(
+				-appState.offsetFields.v - heightFields / 2,
+			)
+			data.visibleFields.v1 =
+				Math.ceil(-appState.offsetFields.v + heightFields / 2) + 1
+
+			// console.log(
+			// 	`[sn9gng] Visible fields:`,
+			// 	JSON.stringify(data.visibleFields),
+			// 	JSON.stringify(appState.markedField),
+			// )
+
 			// Draw!
 			drawHexPattern(data)
+			drawMarker(data)
 			drawCrosshair(data)
 		}
 		if (!isUnmounted) requestAnimationFrame(redraw)
