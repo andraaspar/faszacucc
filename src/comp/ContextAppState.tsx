@@ -8,7 +8,8 @@ export interface IAppState {
 	offsetCss: IPoint
 	sizeCss: IPoint
 	scaleBase: number
-	markedField: IPointUV
+	startField: IPointUV
+	endField: IPointUV
 }
 
 export interface IContextAppState {

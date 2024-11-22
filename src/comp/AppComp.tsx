@@ -22,7 +22,8 @@ export function AppComp(props: AppCompProps) {
 		offsetCss: { x: 0, y: 0 },
 		sizeCss: { x: 100, y: 100 },
 		scaleBase: 0,
-		markedField: { u: 0, v: 0 },
+		startField: { u: 0, v: 0 },
+		endField: { u: 0, v: 0 },
 	})
 	function updateAppState(update: IUpdate<IAppState>) {
 		setAppState(produce(update))
@@ -63,6 +64,7 @@ export function AppComp(props: AppCompProps) {
 			value: getScale(appState.scaleBase),
 		},
 		visibleFields: { u0: 0, v0: 0, u1: 0, v1: 0 },
+		isSelecting: false as boolean,
 	} satisfies IRedrawData
 	const redraw = useRedraw({ appState, data, setPosition: setOffsetCss })
 	return (
@@ -85,18 +87,21 @@ export function AppComp(props: AppCompProps) {
 					if (e.pointerType !== 'mouse' || e.button === 1) {
 						drag.onPointerDown(e)
 					} else if (e.button === 0) {
+						data.isSelecting = true
+						const uv = cssXYToFieldUV({
+							scale: data.scale.value,
+							cssXY: {
+								x: e.pageX,
+								y: e.pageY,
+							},
+							offsetCss: appState.offsetCss,
+							sizeCss: appState.sizeCss,
+						})
 						updateAppState((it) => {
-							const uv = cssXYToFieldUV({
-								scale: data.scale.value,
-								cssXY: {
-									x: e.pageX,
-									y: e.pageY,
-								},
-								offsetCss: appState.offsetCss,
-								sizeCss: appState.sizeCss,
-							})
-							it.markedField.u = Math.round(uv.u)
-							it.markedField.v = Math.round(uv.v)
+							it.startField.u = Math.round(uv.u)
+							it.startField.v = Math.round(uv.v)
+							it.endField.u = Math.round(uv.u)
+							it.endField.v = Math.round(uv.v)
 						})
 					}
 				}}
@@ -105,10 +110,33 @@ export function AppComp(props: AppCompProps) {
 						it.pointerCss.x = e.pageX
 						it.pointerCss.y = e.pageY
 					})
-					drag.onPointerMove(e)
+					if (drag.getIsDragged()) {
+						drag.onPointerMove(e)
+					} else if (data.isSelecting) {
+						const uv = cssXYToFieldUV({
+							scale: data.scale.value,
+							cssXY: {
+								x: e.pageX,
+								y: e.pageY,
+							},
+							offsetCss: appState.offsetCss,
+							sizeCss: appState.sizeCss,
+						})
+						updateAppState((it) => {
+							it.endField.u = Math.round(uv.u)
+							it.endField.v = Math.round(uv.v)
+						})
+					}
 				}}
 				onPointerCancel={drag.onPointerCancel}
-				onPointerUp={drag.onPointerUp}
+				onPointerUp={(e) => {
+					if (e.pointerType !== 'mouse' || e.button === 1) {
+						drag.onPointerUp(e)
+					} else if (e.button === 0) {
+						// Action
+						data.isSelecting = false
+					}
+				}}
 				onPointerLeave={drag.onPointerLeave}
 				onContextMenu={(e) => {
 					e.preventDefault()

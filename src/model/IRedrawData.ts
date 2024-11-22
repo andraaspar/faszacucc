@@ -8,4 +8,5 @@ export interface IRedrawData {
 	appState: IAppState
 	scale: ITransition
 	visibleFields: IRectangleUV
+	isSelecting: boolean
 }
