@@ -4,12 +4,9 @@ import { IPointUV } from '../model/IPointUV'
 import { IUpdater } from '../model/IUpdater'
 
 export interface IAppState {
-	pointerDevice: IPoint
 	pointerCss: IPoint
-	offsetFields: IPointUV
 	offsetCss: IPoint
 	sizeCss: IPoint
-	sizeDevice: IPoint
 	scaleBase: number
 	markedField: IPointUV
 }

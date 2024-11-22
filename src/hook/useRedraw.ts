@@ -4,25 +4,24 @@ import { doTransitionStep } from '../fun/doTransitionStep'
 import { drawCrosshair } from '../fun/drawCrosshair'
 import { drawHexPattern } from '../fun/drawHexPattern'
 import { drawMarker } from '../fun/drawMarker'
-import { getScaleCss } from '../fun/getScaleCss'
-import { getScaleDevice } from '../fun/getScaleDevice'
+import { getScale } from '../fun/getScale'
 import { powTransition } from '../fun/powTransition'
 import { startTransitionIfTargetChanged } from '../fun/startTransitionIfTargetChanged'
 import { EaseType } from '../model/EaseType'
 import { FIELD_SIZE_X, FIELD_SIZE_Y } from '../model/FIELD_SIZE'
+import { IPoint } from '../model/IPoint'
 import { IRedrawData } from '../model/IRedrawData'
-import { IUpdater } from '../model/IUpdater'
 
 const powOut2 = powTransition(EaseType.Out, 2)
 
 export function useRedraw({
 	appState,
-	updateAppState,
 	data,
+	setPosition,
 }: {
 	appState: IAppState
-	updateAppState: IUpdater<IAppState>
 	data: IRedrawData
+	setPosition: (cssXy: IPoint) => void
 }) {
 	const [getCanvasRef, setCanvasRef] = createSignal<HTMLCanvasElement>()
 	const getContext = createMemo<CanvasRenderingContext2D | null | undefined>(
@@ -35,49 +34,47 @@ export function useRedraw({
 		const canvas = getCanvasRef()
 		if (c && canvas) {
 			// Resize canvas to match the device resolution.
-			canvas.width = appState.sizeDevice.x
-			canvas.height = appState.sizeDevice.y
+			canvas.width = appState.sizeCss.x * devicePixelRatio
+			canvas.height = appState.sizeCss.y * devicePixelRatio
 
 			// Share these with all the functions.
 			data.c = c
 			data.canvas = canvas
 
 			// Animate scale if it changed.
-			const prevScale = getScaleCss(data.scaleBase.value)
-			startTransitionIfTargetChanged(appState.scaleBase, data.scaleBase)
-			doTransitionStep(data.scaleBase, powOut2)
-			data.scaleCss = getScaleCss(data.scaleBase.value)
-			data.scaleDevice = getScaleDevice(data.scaleBase.value)
-			const scale = data.scaleCss
+			const prevScale = data.scale.value
+			startTransitionIfTargetChanged(getScale(appState.scaleBase), data.scale)
+			doTransitionStep(data.scale, powOut2)
+			const scale = data.scale.value
 			// Move the screen to keep the cursor in the same place while zooming.
 			if (prevScale < scale) {
 				const multi = scale / prevScale
 				const mouseDistanceX =
-					(appState.pointerCss.x - appState.sizeCss.x / 2) /
-					(FIELD_SIZE_X * prevScale)
+					(appState.pointerCss.x - appState.sizeCss.x / 2) / prevScale
 				const mouseDistanceY =
-					(appState.pointerCss.y - appState.sizeCss.y / 2) /
-					(FIELD_SIZE_Y * prevScale)
-				updateAppState((it) => {
-					it.offsetFields.u -= (mouseDistanceX * multi - mouseDistanceX) / multi
-					it.offsetFields.v -= (mouseDistanceY * multi - mouseDistanceY) / multi
+					(appState.pointerCss.y - appState.sizeCss.y / 2) / prevScale
+				setPosition({
+					x:
+						appState.offsetCss.x -
+						(mouseDistanceX * multi - mouseDistanceX) / multi,
+					y:
+						appState.offsetCss.y -
+						(mouseDistanceY * multi - mouseDistanceY) / multi,
 				})
 			}
 
-			const widthFields =
-				appState.sizeDevice.x / (FIELD_SIZE_X * data.scaleDevice)
-			const heightFields =
-				appState.sizeDevice.y / (FIELD_SIZE_Y * data.scaleDevice)
+			const widthFields = appState.sizeCss.x / scale / FIELD_SIZE_X - 2
+			const heightFields = appState.sizeCss.y / scale / FIELD_SIZE_Y - 2
 			data.visibleFields.u0 = Math.floor(
-				-appState.offsetFields.u - widthFields / 2,
+				-appState.offsetCss.x / FIELD_SIZE_X - widthFields / 2,
 			)
 			data.visibleFields.u1 =
-				Math.ceil(-appState.offsetFields.u + widthFields / 2) + 1
+				Math.ceil(-appState.offsetCss.x / FIELD_SIZE_X + widthFields / 2) + 1
 			data.visibleFields.v0 = Math.floor(
-				-appState.offsetFields.v - heightFields / 2,
+				-appState.offsetCss.y / FIELD_SIZE_Y - heightFields / 2,
 			)
 			data.visibleFields.v1 =
-				Math.ceil(-appState.offsetFields.v + heightFields / 2) + 1
+				Math.ceil(-appState.offsetCss.y / FIELD_SIZE_Y + heightFields / 2) + 1
 
 			// console.log(
 			// 	`[sn9gng] Visible fields:`,

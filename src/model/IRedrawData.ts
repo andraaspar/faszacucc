@@ -6,8 +6,6 @@ export interface IRedrawData {
 	canvas: HTMLCanvasElement
 	c: CanvasRenderingContext2D
 	appState: IAppState
-	scaleBase: ITransition
-	scaleDevice: number
-	scaleCss: number
+	scale: ITransition
 	visibleFields: IRectangleUV
 }

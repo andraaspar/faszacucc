@@ -1,4 +1,4 @@
-import { FIELD_SIZE_N, FIELD_SIZE_X, FIELD_SIZE_Y } from '../model/FIELD_SIZE'
+import { FIELD_SIZE_N, FIELD_SIZE_Y } from '../model/FIELD_SIZE'
 import { IRedrawData } from '../model/IRedrawData'
 
 const hexCanvas = document.createElement('canvas')
@@ -9,12 +9,13 @@ export function drawHexPattern({
 	appState,
 	c: outerContext,
 	canvas: outerCanvas,
-	scaleDevice,
+	scale,
 }: IRedrawData) {
 	const baseWidth = 100 - FIELD_SIZE_N * 2
 	const baseHeight = 150
-	const targetWidth = baseWidth * scaleDevice
-	const targetHeight = baseHeight * scaleDevice
+	const s = scale.value * devicePixelRatio
+	const targetWidth = baseWidth * s
+	const targetHeight = baseHeight * s
 	hexCanvas.width = Math.max(
 		1,
 		Math.min(window.innerWidth, Math.ceil(targetWidth)),
@@ -38,47 +39,31 @@ export function drawHexPattern({
 		const alpha = Math.min(
 			Math.max(0, Math.min(100, hexCanvas.height - 8)) / 100,
 			1 -
-				(Math.max(fadeBeforeMaxScale, Math.min(maxScale, scaleDevice)) -
+				(Math.max(fadeBeforeMaxScale, Math.min(maxScale, s)) -
 					fadeBeforeMaxScale) /
 					(scaleDiff || 1),
 		)
 		context.lineWidth = 1
 		context.strokeStyle = `lch(100 0 0 / ${0.25 * alpha})`
-		context.moveTo(0.5, 25 * scaleDevice + 0.5)
-		context.lineTo(0.5, 75 * scaleDevice + 0.5)
-		context.lineTo(
-			(50 - FIELD_SIZE_N) * scaleDevice + 0.5,
-			100 * scaleDevice + 0.5,
-		)
-		context.lineTo(
-			(100 - FIELD_SIZE_N * 2) * scaleDevice + 0.5,
-			75 * scaleDevice + 0.5,
-		)
-		context.lineTo(
-			(100 - FIELD_SIZE_N * 2) * scaleDevice + 0.5,
-			25 * scaleDevice + 0.5,
-		)
-		context.lineTo((50 - FIELD_SIZE_N) * scaleDevice + 0.5, 0.5)
+		context.moveTo(0.5, 25 * s + 0.5)
+		context.lineTo(0.5, 75 * s + 0.5)
+		context.lineTo((50 - FIELD_SIZE_N) * s + 0.5, 100 * s + 0.5)
+		context.lineTo((100 - FIELD_SIZE_N * 2) * s + 0.5, 75 * s + 0.5)
+		context.lineTo((100 - FIELD_SIZE_N * 2) * s + 0.5, 25 * s + 0.5)
+		context.lineTo((50 - FIELD_SIZE_N) * s + 0.5, 0.5)
 		context.closePath()
-		context.moveTo(
-			(50 - FIELD_SIZE_N) * scaleDevice + 0.5,
-			100 * scaleDevice + 0.5,
-		)
-		context.lineTo(
-			(50 - FIELD_SIZE_N) * scaleDevice + 0.5,
-			150 * scaleDevice + 0.5,
-		)
+		context.moveTo((50 - FIELD_SIZE_N) * s + 0.5, 100 * s + 0.5)
+		context.lineTo((50 - FIELD_SIZE_N) * s + 0.5, 150 * s + 0.5)
 		context.stroke()
 	}
 	const pattern = outerContext.createPattern(hexCanvas, 'repeat')!
 	pattern.setTransform(
 		new DOMMatrix()
 			.translate(
-				appState.sizeDevice.x / 2 +
-					appState.offsetFields.u * FIELD_SIZE_X * scaleDevice,
-				appState.sizeDevice.y / 2 +
-					appState.offsetFields.v * FIELD_SIZE_Y * scaleDevice +
-					fieldCenterOffset * FIELD_SIZE_Y * scaleDevice,
+				appState.offsetCss.x * s + (appState.sizeCss.x / 2) * devicePixelRatio,
+				appState.offsetCss.y * s +
+					(appState.sizeCss.y / 2) * devicePixelRatio +
+					fieldCenterOffset * FIELD_SIZE_Y * s,
 			)
 			.scale(targetWidth / hexCanvas.width, targetHeight / hexCanvas.height),
 	)

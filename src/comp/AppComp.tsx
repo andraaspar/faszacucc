@@ -1,10 +1,13 @@
 import { createEffect, on } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
+import { cssXYToFieldUV } from '../fun/cssXYToFieldUV'
 import { formatNumber } from '../fun/formatNumber'
-import { getScaleCss } from '../fun/getScaleCss'
+import { getScale } from '../fun/getScale'
 import { useDrag } from '../hook/useDrag'
 import { useRedraw } from '../hook/useRedraw'
 import { useWindowResizeListener } from '../hook/useWindowResizeListener'
+import { FIELD_SIZE_X, FIELD_SIZE_Y } from '../model/FIELD_SIZE'
+import { IPoint } from '../model/IPoint'
 import { IRedrawData } from '../model/IRedrawData'
 import { IUpdate } from '../model/IUpdate'
 import { ContextAppState, IAppState } from './ContextAppState'
@@ -15,12 +18,9 @@ export function AppComp(props: AppCompProps) {
 	const { getWindowHeight, getWindowWidth } = useWindowResizeListener()
 
 	const [appState, setAppState] = createStore<IAppState>({
-		pointerDevice: { x: 0, y: 0 },
 		pointerCss: { x: 0, y: 0 },
-		offsetFields: { u: 0, v: 0 },
 		offsetCss: { x: 0, y: 0 },
 		sizeCss: { x: 100, y: 100 },
-		sizeDevice: { x: 100 * devicePixelRatio, y: 100 * devicePixelRatio },
 		scaleBase: 0,
 		markedField: { u: 0, v: 0 },
 	})
@@ -33,21 +33,21 @@ export function AppComp(props: AppCompProps) {
 			updateAppState((it) => {
 				it.sizeCss.x = windowWidth
 				it.sizeCss.y = windowHeight
-				it.sizeDevice.x = it.sizeCss.x * devicePixelRatio
-				it.sizeDevice.y = it.sizeCss.y * devicePixelRatio
 			})
 		}),
 	)
 
+	function setOffsetCss(point: IPoint) {
+		updateAppState((it) => {
+			it.offsetCss.x = point.x
+			it.offsetCss.y = point.y
+		})
+	}
+
 	const drag = useDrag({
-		getPosition: () => appState.offsetFields,
-		setPosition: (point) => {
-			updateAppState((it) => {
-				it.offsetFields.u = point.u
-				it.offsetFields.v = point.v
-			})
-		},
-		getScale: () => getScaleCss(appState.scaleBase),
+		getPosition: () => appState.offsetCss,
+		setPosition: setOffsetCss,
+		getScale: () => getScale(appState.scaleBase),
 		lastPointerCss: appState.pointerCss,
 	})
 
@@ -55,41 +55,55 @@ export function AppComp(props: AppCompProps) {
 		appState,
 		canvas: undefined as any,
 		c: undefined as any,
-		scaleBase: { start: 0, end: 0, t: 1, step: 5 / 60, value: 0 },
-		scaleDevice: 0,
-		scaleCss: 0,
+		scale: {
+			start: getScale(appState.scaleBase),
+			end: getScale(appState.scaleBase),
+			t: 1,
+			step: 5 / 60,
+			value: getScale(appState.scaleBase),
+		},
 		visibleFields: { u0: 0, v0: 0, u1: 0, v1: 0 },
 	} satisfies IRedrawData
-	const redraw = useRedraw({ appState, updateAppState, data })
+	const redraw = useRedraw({ appState, data, setPosition: setOffsetCss })
 	return (
 		<ContextAppState.Provider value={{ appState, setAppState, updateAppState }}>
 			<div class='overscript'>
-				X: {formatNumber(3, 5, appState.offsetFields.u)} Y:{' '}
-				{formatNumber(3, 5, appState.offsetFields.v)} Scale:{' '}
-				{appState.scaleBase} Pointer:{' '}
-				{formatNumber(1, 5, appState.pointerDevice.x)}{' '}
-				{formatNumber(1, 5, appState.pointerDevice.y)}
+				X: {formatNumber(3, 5, appState.offsetCss.x / FIELD_SIZE_X)} Y:{' '}
+				{formatNumber(3, 5, appState.offsetCss.y / FIELD_SIZE_Y)} Scale:{' '}
+				{appState.scaleBase}
 			</div>
 			<canvas
 				ref={redraw.setCanvasRef}
 				onWheel={(e) => {
-					setAppState(
-						'scaleBase',
-						e.deltaY < 0 ? appState.scaleBase + 1 : appState.scaleBase - 1,
-					)
+					const isUp = e.deltaY < 0
+					updateAppState((it) => {
+						if (isUp) it.scaleBase++
+						else it.scaleBase--
+					})
 				}}
 				onPointerDown={(e) => {
 					if (e.pointerType !== 'mouse' || e.button === 1) {
 						drag.onPointerDown(e)
-					} else if (e.button === 1) {
+					} else if (e.button === 0) {
+						updateAppState((it) => {
+							const uv = cssXYToFieldUV({
+								scale: data.scale.value,
+								cssXY: {
+									x: e.pageX,
+									y: e.pageY,
+								},
+								offsetCss: appState.offsetCss,
+								sizeCss: appState.sizeCss,
+							})
+							it.markedField.u = Math.round(uv.u)
+							it.markedField.v = Math.round(uv.v)
+						})
 					}
 				}}
 				onPointerMove={(e) => {
 					updateAppState((it) => {
 						it.pointerCss.x = e.pageX
 						it.pointerCss.y = e.pageY
-						it.pointerDevice.x = e.pageX * devicePixelRatio
-						it.pointerDevice.y = e.pageY * devicePixelRatio
 					})
 					drag.onPointerMove(e)
 				}}

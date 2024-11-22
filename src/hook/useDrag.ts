@@ -1,11 +1,9 @@
 import { createEffect, createSignal, on } from 'solid-js'
-import { FIELD_SIZE_X, FIELD_SIZE_Y } from '../model/FIELD_SIZE'
 import { IPoint } from '../model/IPoint'
-import { IPointUV } from '../model/IPointUV'
 
 export interface IDragStart {
 	page: IPoint
-	position: IPointUV
+	position: IPoint
 	scale: number
 }
 
@@ -15,8 +13,8 @@ export function useDrag({
 	getScale,
 	lastPointerCss,
 }: {
-	getPosition: () => IPointUV
-	setPosition: (point: IPointUV) => void
+	getPosition: () => IPoint
+	setPosition: (point: IPoint) => void
 	getScale: () => number
 	lastPointerCss: IPoint
 }) {
@@ -30,7 +28,7 @@ export function useDrag({
 				const position = getPosition()
 				setDragStart({
 					page: { x: lastPointerCss.x, y: lastPointerCss.y },
-					position: { u: position.u, v: position.v },
+					position: { x: position.x, y: position.y },
 					scale: scale,
 				} satisfies IDragStart)
 			}
@@ -41,7 +39,7 @@ export function useDrag({
 		const position = getPosition()
 		setDragStart({
 			page: { x: e.pageX, y: e.pageY },
-			position: { u: position.u, v: position.v },
+			position: { x: position.x, y: position.y },
 			scale: getScale(),
 		} satisfies IDragStart)
 	}
@@ -49,12 +47,10 @@ export function useDrag({
 		const dragStart = getDragStart()
 		if (dragStart) {
 			setPosition({
-				u:
-					dragStart.position.u +
-					(e.pageX - dragStart.page.x) / FIELD_SIZE_X / dragStart.scale,
-				v:
-					dragStart.position.v +
-					(e.pageY - dragStart.page.y) / FIELD_SIZE_Y / dragStart.scale,
+				x:
+					dragStart.position.x + (e.pageX - dragStart.page.x) / dragStart.scale,
+				y:
+					dragStart.position.y + (e.pageY - dragStart.page.y) / dragStart.scale,
 			})
 		}
 	}
